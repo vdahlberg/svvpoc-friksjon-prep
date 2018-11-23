@@ -62,6 +62,7 @@ connectionProperties = {
 
 import pandas as pd
 import utm
+from geopy import distance
 
 def getlatlong(row):
     tup = utm.to_latlon(row.iloc[0], row.iloc[1], 33, 'U')
@@ -76,6 +77,7 @@ for file in filenames:
     df = df.toPandas()
     df = df[(df[['Latitude']] != 0).all(axis=1)]
     df[['Longitude', 'Latitude']] = df[['Longitude', 'Latitude']].apply(getlatlong, axis=1)
+    df['distancekm'] = df.apply(lambda x: distance.distance((x['startlat'], x['startlong']) , (x['endlat'], x['endlon'])).km, axis = 1)
     df2 = spark.createDataFrame(df)
 
     # write to db
