@@ -1,4 +1,3 @@
 utm
 pandas
 azure-storage
-geopy
