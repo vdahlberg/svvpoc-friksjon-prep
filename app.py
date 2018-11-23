@@ -62,7 +62,6 @@ connectionProperties = {
 
 import pandas as pd
 import utm
-from geopy import distance
 
 def getlatlong(row):
     tup = utm.to_latlon(row.iloc[0], row.iloc[1], 33, 'U')
