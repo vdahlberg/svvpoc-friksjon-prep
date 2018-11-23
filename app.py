@@ -77,7 +77,6 @@ for file in filenames:
     df = df.toPandas()
     df = df[(df[['Latitude']] != 0).all(axis=1)]
     df[['Longitude', 'Latitude']] = df[['Longitude', 'Latitude']].apply(getlatlong, axis=1)
-    df['distancekm'] = df.apply(lambda x: distance.distance((x['startlat'], x['startlong']) , (x['endlat'], x['endlon'])).km, axis = 1)
     df2 = spark.createDataFrame(df)
 
     # write to db
