@@ -3,15 +3,15 @@
 import os
 from os import environ
 
-storage_account_name = "svvpocdlgen2"
+storage_account_name = "svvpocdlg2"
 storage_account_access_key = environ.get("AZURE_STORAGE_ACCESS_KEY").strip()
-
+blob_cname = "friksjonsdata"
 
 # Read all files in blob container
 from azure.storage.blob import BlockBlobService
 
 block_blob_service = BlockBlobService(account_name=storage_account_name, account_key=storage_account_access_key)
-generator = block_blob_service.list_blobs('friksjonosmaalingervictortest')
+generator = block_blob_service.list_blobs(blob_cname)
 filenames = []
 processed = []
 
@@ -43,7 +43,7 @@ if not filenames:
 # Create spark
 from pyspark.sql import SparkSession
 
-spark = SparkSession.builder.appName('vinter-prep-wrangler').config("spark.hadoop.fs.wasbs.impl", "org.apache.hadoop.fs.azure.NativeAzureFileSystem").config("fs.wasbs.impl", "org.apache.hadoop.fs.azure.NativeAzureFileSystem").config("fs.azure.account.key."+storage_account_name+".blob.core.windows.net", storage_account_access_key).getOrCreate()
+spark = SparkSession.builder.appName('friksjon-prep-wrangler').config("spark.hadoop.fs.wasbs.impl", "org.apache.hadoop.fs.azure.NativeAzureFileSystem").config("fs.wasbs.impl", "org.apache.hadoop.fs.azure.NativeAzureFileSystem").config("fs.azure.account.key."+storage_account_name+".blob.core.windows.net", storage_account_access_key).getOrCreate()
 
 
 # DB Setup
@@ -70,7 +70,7 @@ def getlatlong(row):
 # Read CSV and writo to DB
 for file in filenames:
     print("Processing file: " + file)
-    df = spark.read.format("csv").options(header='true',inferschema='true',sep=",").load("wasbs://friksjonosmaalingervictortest@svvpocdlgen2.blob.core.windows.net/" + file)
+    df = spark.read.format("csv").options(header='true',inferschema='true',sep=",").load("wasbs://" + blob_cname + "@" + storage_account_name + ".blob.core.windows.net/" + file)
     print(file + " has " + str(df.count()) + " rows.")
     
     df = df.toPandas()
@@ -79,9 +79,9 @@ for file in filenames:
     df2 = spark.createDataFrame(df)
 
     # write to db
-    df2.write.jdbc(url=jdbcUrl, table="friksjondataOpenshift", mode="append", properties=connectionProperties)
+    df2.write.jdbc(url=jdbcUrl, table=blob_cname, mode="append", properties=connectionProperties)
     # Write dummy file
-    block_blob_service.create_blob_from_text('friksjonosmaalingervictortest', "processed_" + file, 'dummy')
+    block_blob_service.create_blob_from_text(blob_cname, "processed_" + file, 'dummy')
     
 
 
